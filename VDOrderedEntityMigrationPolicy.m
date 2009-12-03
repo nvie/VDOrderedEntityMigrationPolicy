@@ -17,6 +17,11 @@
 @implementation VDOrderedEntityMigrationPolicy
 
 
+- (NSDictionary *)entityMappingForOrderedKeys {
+	return [NSDictionary dictionary];
+}
+
+
 - (BOOL)createDestinationInstancesForSourceInstance:(NSManagedObject *)sInstance
 									  entityMapping:(NSEntityMapping *)mapping
 											manager:(NSMigrationManager *)manager
@@ -30,26 +35,20 @@
 		return NO;
 	}
 	
-	// Assure that this is invoked on BWOrderedManagedObject's only
-	NSAssert([sInstance isKindOfClass:[BWOrderedManagedObject class]],
-			 @"This entity migration policy is only suited for entities inheriting from BWOrderedManagedObject.");
-	
 	// Set some shortcuts ('moc' and 'psc')
 	NSManagedObjectContext *moc = [manager sourceContext];
 	NSPersistentStoreCoordinator *psc = [moc persistentStoreCoordinator];
 	
-	// Cast this value once (we need specific BWOrderedManagedObject functionality)
-	BWOrderedManagedObject *orderedSourceInstance = (BWOrderedManagedObject *)sInstance;
-	
 	// Then, for each ordered key, perform a URL migration
-	for (NSString *keyname in [orderedSourceInstance orderedKeys]) {
+	NSDictionary *mappingForOrderedKeys = [self entityMappingForOrderedKeys];
+	for (NSString *keyname in [mappingForOrderedKeys allKeys]) {
 		
 		// Create a mutable array to hold all instances from the source model this
 		// ordered key refers to
 		NSMutableArray *sourceInstances = [[NSMutableArray alloc] init];
 		
 		// Loop over all (source model) URL's that this ordered key refers to
-		for (NSURL *url in [orderedSourceInstance orderingForKey:keyname]) {
+		for (NSURL *url in (NSArray *)[sInstance valueForKey:keyname]) {
 			NSManagedObjectID *objID = [psc managedObjectIDForURIRepresentation:url];
 			NSManagedObject *object = [moc objectWithID:objID];
 			[sourceInstances addObject:object];
@@ -58,7 +57,7 @@
 		// Query the migration manager for the corresponding instances from the
 		// destination model
 		NSArray *destinationInstances;
-		destinationInstances = [manager destinationInstancesForEntityMappingNamed:[mapping name]
+		destinationInstances = [manager destinationInstancesForEntityMappingNamed:[mappingForOrderedKeys objectForKey:keyname]
 																  sourceInstances:sourceInstances];
 		
 		// Convert those destination instances back to URL's
@@ -78,8 +77,7 @@
 										objectAtIndex:0];
 		
 		// Finally, we can set the new ordering onto the destination instance
-		BWOrderedManagedObject *orderedDestinationInstance = (BWOrderedManagedObject *)dInstance;
-		[orderedDestinationInstance setOrdering:destinationURLs forKey:keyname];
+		[dInstance setValue:destinationURLs forKey:keyname];
 		
 		// Free up memory
 		[orderedSourceInstanceList release];

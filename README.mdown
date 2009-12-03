@@ -4,16 +4,62 @@ This is the implementation of a custom Core Data entity migration policy for
 migrating entities that have ordered relationships (as inherited from
 Brian Webster's BWOrderedManagedObject).
 
+
 Ordered relationships in Core Data???
 -------------------------------------
 Yes, it can be done. See the excellent work of [Brian
 Webster](http://www.fatcatsoftware.com/blog/2008/08).
 
+
+The migration problem with ordered relationships
+------------------------------------------------
+The order of relationships in BWOrderedManagedObject's implementation is stored
+in a separate NSArray attribute on the entity class. Since an NSArray has
+ordering by nature, storing objects as such requires a handle to those objects.
+The identifier that BWOrderedManagedObject uses in its current implementation
+is the object's URI representation, which is unique in (and bound to) the
+managed object context. During migration, objects are replicated in another
+such context, thereby invalidating any URI references to them.
+
+VDOrderedEntityMigrationPolicy solves that problem by automatically translating
+those URI's to URI's that are valid in the destination context, as an integral
+part of the migration process. All of this should be rather transparent for the
+programmer performing the migration.
+
+
 Using VDOrderedEntityMigrationPolicy
 ------------------------------------
-Since it's a general implementation, you do not need to specify what 
-ordered relationships you want to migrate. The general implementation finds
-all ordered keys and migrates their values one-by-one. The only thing left
-is to specify the VDOrderedEntityMigrationPolicy as the custom migration policy
-on your entity mapping in your mapping model for each entity that has one or
-more ordered keys. That's all!
+Since it's a general implementation, you need only specify what 
+ordered relationships you want to migrate. You do this by overriding the
+abstract implementation of VDOrderedEntityMigrationPolicy and overriding the
+following method:
+
+    - (NSDictionary *)entityMappingForOrderedKeys;
+
+This method should return a dictionary with keys set to the attribute names of
+all ordered attributes. The values in this dictionary must be the names of the
+entity mappings that are responsible for copying the child entities for the
+ordered relationship.
+
+For example, when you want to migrate a model containing Playlist entities that
+hold an ordered relationship to Track entities, your implementation looks as
+follows:
+
+**PlaylistMigrationPolicy.h:**
+	@interface PlaylistMigrationPolicy : VDOrderedEntityMigrationPolicy {
+	}
+	@end
+
+**PlaylistMigrationPolicy.m:**
+	@implementation PlaylistMigrationPolicy
+
+	- (NSDictionary *)entityMappingForOrderedKeys {
+		return [NSDictionary dictionaryWithObjectsAndKeys:
+		        @"TrackToTrack", @"tracksOrdering",
+				nil];
+	}
+
+	@end
+
+That's all. Needless to say, you need to set the custom entity migration policy
+in your mapping model file to PlaylistMigrationPolicy for the Playlist entity.

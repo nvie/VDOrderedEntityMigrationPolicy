@@ -15,6 +15,20 @@
 @interface VDOrderedEntityMigrationPolicy : NSEntityMigrationPolicy {
 }
 
+// Override this method in a subclass to provide information on both which keys
+// are ordered and which entity mappings are used to construct the destination
+// equivalents of the entities these ordered keys refer to.
+// 
+// For example, when specifying the order for a Playlist refering to Tracks, use:
+// 
+// - (NSDictionary *)entityMappingForOrderedKeys {
+//     return [NSDictionary dictionaryWithObjectsAndKeys:
+//             @"TracksToTracks", @"tracksOrdering",
+//             nil];
+// }
+//
+- (NSDictionary *)entityMappingForOrderedKeys;
+
 - (BOOL)createDestinationInstancesForSourceInstance:(NSManagedObject *)sInstance
 									  entityMapping:(NSEntityMapping *)mapping
 											manager:(NSMigrationManager *)manager
