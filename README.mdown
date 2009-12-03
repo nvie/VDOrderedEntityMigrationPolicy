@@ -7,7 +7,7 @@ Brian Webster's BWOrderedManagedObject).
 Ordered relationships in Core Data???
 -------------------------------------
 Yes, it can be done. See the excellent work of [Brian
-Webster][http://www.fatcatsoftware.com/blog/2008/08].
+Webster](http://www.fatcatsoftware.com/blog/2008/08).
 
 Using VDOrderedEntityMigrationPolicy
 ------------------------------------
