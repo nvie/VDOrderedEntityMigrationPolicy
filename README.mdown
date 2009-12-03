@@ -1,0 +1,19 @@
+What's VDOrderedEntityMigrationPolicy?
+======================================
+This is the implementation of a custom Core Data entity migration policy for
+migrating entities that have ordered relationships (as inherited from
+Brian Webster's BWOrderedManagedObject).
+
+Ordered relationships in Core Data???
+-------------------------------------
+Yes, it can be done. See the excellent work of [Brian
+Webster][http://www.fatcatsoftware.com/blog/2008/08].
+
+Using VDOrderedEntityMigrationPolicy
+------------------------------------
+Since it's a general implementation, you do not need to specify what 
+ordered relationships you want to migrate. The general implementation finds
+all ordered keys and migrates their values one-by-one. The only thing left
+is to specify the VDOrderedEntityMigrationPolicy as the custom migration policy
+on your entity mapping in your mapping model for each entity that has one or
+more ordered keys. That's all!
